@@ -4,7 +4,8 @@
 #include "complement.h"
 
 
-typedef struct {
+typedef struct 
+{
     char id[100];
     char titulo[700];
     char generos[700];
@@ -13,7 +14,8 @@ typedef struct {
     float rating;
 } Pelicula;
 
-typedef struct {
+typedef struct 
+{
     Map* mapa_id;
     Map* mapa_generos;
     Map* mapa_directores;

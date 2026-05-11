@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include "../DeclarationFiles/funciones.h"
 
+/*Inicializa las estructuras vacias del catalogo y luego entra a un 
+ciclo do-while para mostrar el menu interactivo. 
+Redirige a las distintas opciones segun lo que ingrese el usuario 
+y se ejecuta hasta que se ingresa el 0.*/
 int main() {
     Catalogo* mi_catalogo = inicializar_catalogo();
     int opcion;

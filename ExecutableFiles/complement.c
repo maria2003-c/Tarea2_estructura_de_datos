@@ -1,6 +1,6 @@
 #include "../DeclarationFiles/complement.h"
 
-// --- IMPLEMENTACIÓN LISTA ---
+// --- LISTA ---
 typedef struct Node {
     void *data;
     struct Node *next;
@@ -59,7 +59,7 @@ int list_erase(List *L, void *dato) {
     return 0;
 }
 
-// --- IMPLEMENTACIÓN MAPA (HASH MAP) ---
+// --- MAPA (HASH MAP) ---
 typedef struct HashNode {
     char key[500]; 
     void *value;

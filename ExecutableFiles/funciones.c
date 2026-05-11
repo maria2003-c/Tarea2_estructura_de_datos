@@ -1,28 +1,9 @@
 #include "../DeclarationFiles/funciones.h"
 
-void extraer_campo(char* linea, int indice, char* destino, int limite) {
-    int i = 0, j = 0, comillas = 0, idx_actual = 0;
-
-    while (linea[i] != '\0' && linea[i] != '\n' && linea[i] != '\r') {
-        if (linea[i] == '\"') {
-            comillas = !comillas; 
-        } else if (linea[i] == ',' && !comillas) {
-            if (idx_actual == indice) break;
-            idx_actual++;
-            j = 0; 
-        } else {
-            if (idx_actual == indice) {
-                if (j < limite - 1) { 
-                    destino[j++] = linea[i];
-                }
-            }
-        }
-        i++;
-    }
-    destino[j] = '\0';
-}
-
-Catalogo* inicializar_catalogo() {
+/*Inicializa la memoria para el catálogo principal, creando los mapas 
+y la lista de la watchlist con sus capacidades iniciales.*/
+Catalogo* inicializar_catalogo() 
+{
     Catalogo* cat = (Catalogo*)malloc(sizeof(Catalogo));
     cat->mapa_id = map_create(3000);        
     cat->mapa_generos = map_create(200);    
@@ -31,13 +12,18 @@ Catalogo* inicializar_catalogo() {
     return cat;
 }
 
-void cargar_catalogo(Catalogo* cat) {
+/*Lee el archivo CSV linea por linea. Utiliza un ciclo for para revisar 
+cada caracter, separando las columnas por comas pero ignorando las comas 
+que estan dentro de las comillas dobles. Finalmente guarda en los mapas.*/
+void cargar_catalogo(Catalogo* cat) 
+{
     char archivo[100];
     printf("Ingrese el nombre del archivo (ej. Top1500.csv): ");
     scanf("%s", archivo);
 
     FILE* file = fopen(archivo, "r");
-    if (!file) {
+    if (!file) 
+    {
         printf("Error: No se pudo abrir el archivo %s\n", archivo);
         return;
     }
@@ -46,30 +32,53 @@ void cargar_catalogo(Catalogo* cat) {
     fgets(linea, 2048, file); 
 
     int cont = 0;
-    while (fgets(linea, 2048, file)) {
+
+    while (fgets(linea, 2048, file)) 
+    {
         if (strlen(linea) < 10) continue; 
 
         Pelicula* p = (Pelicula*)malloc(sizeof(Pelicula));
-        char temp_num[100];
+        memset(p, 0, sizeof(Pelicula)); 
 
-        extraer_campo(linea, 1, p->id, sizeof(p->id));
-        extraer_campo(linea, 5, p->titulo, sizeof(p->titulo));
-        extraer_campo(linea, 11, p->generos, sizeof(p->generos));
-        extraer_campo(linea, 14, p->directores, sizeof(p->directores));
+        char temp_rating[20] = {0};
+        char temp_anio[20] = {0};
 
-        extraer_campo(linea, 8, temp_num, sizeof(temp_num));
-        p->rating = atof(temp_num);
+        int col = 0;
+        int j = 0;
+        int comillas = 0;
 
-        extraer_campo(linea, 10, temp_num, sizeof(temp_num));
-        p->anio = atoi(temp_num);
+        for (int i = 0; linea[i] != '\0' && linea[i] != '\n' && linea[i] != '\r'; i++) 
+        {
+            if (linea[i] == '\"') {
+                comillas = !comillas;
+            } 
+            else if (linea[i] == ',' && !comillas) 
+            {
+                col++;
+                j = 0;
+            } 
+            else 
+            {
+                if (col == 1 && j < 49) p->id[j++] = linea[i];
+                else if (col == 5 && j < 499) p->titulo[j++] = linea[i];
+                else if (col == 8 && j < 19) temp_rating[j++] = linea[i];
+                else if (col == 10 && j < 19) temp_anio[j++] = linea[i];
+                else if (col == 11 && j < 499) p->generos[j++] = linea[i];
+                else if (col == 14 && j < 499) p->directores[j++] = linea[i];
+            }
+        }
 
-        
+        p->rating = atof(temp_rating);
+        p->anio = atoi(temp_anio);
+
         map_insert(cat->mapa_id, p->id, p);
 
         char copia_gen[500];
         strcpy(copia_gen, p->generos);
         char* token = strtok(copia_gen, ", ");
-        while (token != NULL) {
+
+        while (token != NULL) 
+        {
             List* lista_gen = (List*)map_search(cat->mapa_generos, token);
             if (lista_gen == NULL) {
                 lista_gen = list_create();
@@ -92,13 +101,17 @@ void cargar_catalogo(Catalogo* cat) {
     printf("¡Catálogo cargado! Se indexaron %d películas.\n", cont);
 }
 
-void buscar_por_genero(Catalogo* cat) {
+/*Pide un genero al usuario y lo busca en el mapa de generos.
+ Si lo encuentra, recorre la lista asociada e imprime las peliculas.*/
+void buscar_por_genero(Catalogo* cat) 
+{
     char genero[100];
     printf("Ingrese el género a buscar (Ej. Sci-Fi, Action, Drama): ");
     scanf("%99s", genero);
 
     List* resultados = (List*)map_search(cat->mapa_generos, genero);
-    if (!resultados) {
+    if (!resultados) 
+    {
         printf("No se encontraron películas para el género '%s'.\n", genero);
         return;
     }
@@ -110,10 +123,13 @@ void buscar_por_genero(Catalogo* cat) {
     }
 }
 
-void buscar_por_director(Catalogo* cat) {
+/*Pide el nombre de un director y busca la lista de peliculas
+ asociadas a el en el mapa de directores.*/
+void buscar_por_director(Catalogo* cat) 
+{
     char director[200];
     printf("Ingrese nombre del director (considerar mayúsculas): ");
-    getchar();
+    getchar(); 
     fgets(director, 200, stdin);
     director[strcspn(director, "\n")] = 0; 
 
@@ -130,7 +146,10 @@ void buscar_por_director(Catalogo* cat) {
     }
 }
 
-void buscar_por_decada(Catalogo* cat) {
+/*Recorre todo el mapa principal de identificadores para buscar
+ peliculas que coincidan con el rango de 10 años ingresado.*/
+void buscar_por_decada(Catalogo* cat) 
+{
     int anio;
     printf("Ingrese un año de referencia para la década (Ej. 1990): ");
     scanf("%d", &anio);
@@ -141,8 +160,11 @@ void buscar_por_decada(Catalogo* cat) {
     printf("\nPelículas entre %d y %d:\n", decada_inicio, decada_fin);
     Pelicula* p = (Pelicula*)map_first(cat->mapa_id);
     int encontradas = 0;
-    while (p != NULL) {
-        if (p->anio >= decada_inicio && p->anio <= decada_fin) {
+
+    while (p != NULL) 
+    {
+        if (p->anio >= decada_inicio && p->anio <= decada_fin) 
+        {
             printf("- %s (%d)\n", p->titulo, p->anio);
             encontradas++;
         }
@@ -151,7 +173,10 @@ void buscar_por_decada(Catalogo* cat) {
     if(encontradas == 0) printf("No hay películas en esa década.\n");
 }
 
-void busqueda_avanzada(Catalogo* cat) {
+/*Obtiene la lista de un genero especifico y la recorre filtrando 
+ unicamente las peliculas que coincidan con el año de la decada.*/
+void busqueda_avanzada(Catalogo* cat) 
+{
     char genero[100];
     int anio;
     printf("Ingrese Género: ");
@@ -163,7 +188,8 @@ void busqueda_avanzada(Catalogo* cat) {
     int decada_fin = decada_inicio + 9;
 
     List* resultados = (List*)map_search(cat->mapa_generos, genero);
-    if (!resultados) {
+    if (!resultados) 
+    {
         printf("No hay películas de ese género.\n");
         return;
     }
@@ -171,8 +197,11 @@ void busqueda_avanzada(Catalogo* cat) {
     printf("\nResultados para '%s' en los %ds:\n", genero, decada_inicio);
     Pelicula* p = (Pelicula*)list_first(resultados);
     int encontradas = 0;
-    while (p != NULL) {
-        if (p->anio >= decada_inicio && p->anio <= decada_fin) {
+
+    while (p != NULL) 
+    {
+        if (p->anio >= decada_inicio && p->anio <= decada_fin) 
+        {
             printf("- %s (%d) | %s\n", p->titulo, p->anio, p->directores);
             encontradas++;
         }
@@ -181,7 +210,10 @@ void busqueda_avanzada(Catalogo* cat) {
     if(encontradas == 0) printf("No hubo coincidencias.\n");
 }
 
-void gestionar_watchlist(Catalogo* cat) {
+/*Despliega un menu para agregar, eliminar o ver las peliculas
+ guardadas en la lista de watchlist del usuario.*/
+void gestionar_watchlist(Catalogo* cat) 
+{
     int opcion;
     char id[50];
     printf("\n--- Mi Watchlist ---\n");
@@ -191,28 +223,42 @@ void gestionar_watchlist(Catalogo* cat) {
     printf("Seleccione: ");
     scanf("%d", &opcion);
 
-    if (opcion == 1) {
+    if (opcion == 1) 
+    {
         printf("Ingrese ID de la película (Ej. tt0068646): ");
         scanf("%49s", id);
         Pelicula* p = (Pelicula*)map_search(cat->mapa_id, id);
-        if (p) {
+
+        if (p) 
+        {
             list_pushBack(cat->watchlist, p);
             printf("'%s' añadida a tu Watchlist.\n", p->titulo);
-        } else {
+        } 
+        else 
+        {
             printf("Error: El ID %s no existe en el catálogo.\n", id);
         }
-    } else if (opcion == 2) {
+    }
+    else if (opcion == 2) 
+    {
         printf("Ingrese ID a eliminar: ");
         scanf("%49s", id);
         Pelicula* p = (Pelicula*)map_search(cat->mapa_id, id);
-        if (p && list_erase(cat->watchlist, p)) {
+
+        if (p && list_erase(cat->watchlist, p)) 
+        {
             printf("Película eliminada de la Watchlist.\n");
-        } else {
+        } 
+        else 
+        {
             printf("Película no encontrada en tu Watchlist.\n");
         }
-    } else if (opcion == 3) {
+    } 
+    else if (opcion == 3) 
+    {
         Pelicula* p = (Pelicula*)list_first(cat->watchlist);
         if (!p) printf("Tu Watchlist está vacía.\n");
+
         while (p != NULL) {
             printf("- [%s] %s (%d)\n", p->id, p->titulo, p->anio);
             p = (Pelicula*)list_next(cat->watchlist);
